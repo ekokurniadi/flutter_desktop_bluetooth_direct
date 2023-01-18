@@ -5,35 +5,55 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+import 'package:meta/meta.dart' as meta;
 
 import 'package:meta/meta.dart';
 import 'package:meta/meta.dart';
 import 'dart:ffi' as ffi;
 
+part 'bridge_generated.freezed.dart';
+
 abstract class Rust {
-  Future<List<BluetoothDevice>> getAdapter({dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kGetAdapterConstMeta;
-
-  Future<void> connect({required Uint8List data, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kConnectConstMeta;
-
+  /// INIT LOGGER
   Future<void> init({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitConstMeta;
+
+  /// CHECK BLUETOOTH IS EXIST OR NOT
+  Future<bool> getAdapterState({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetAdapterStateConstMeta;
+
+  /// INFO : DISCOVER BLUETOOTH DEVICE
+  Future<List<BluetoothDevice>> discoverDevice({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kDiscoverDeviceConstMeta;
+
+  /// INFO : CONNECT TO DEVICE
+  Future<bool> connectToDevice({required String serviceUuid, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kConnectToDeviceConstMeta;
+
+  Future<bool> disconnect({required String serviceUuid, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kDisconnectConstMeta;
+
+  Future<void> startPrinter(
+      {required String serviceUuid, required Uint8List data, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kStartPrinterConstMeta;
 }
 
-class BluetoothDevice {
-  final String? name;
-  final String? address;
-  final bool status;
-
-  BluetoothDevice({
-    this.name,
-    this.address,
-    required this.status,
-  });
+@freezed
+@meta.immutable
+class BluetoothDevice with _$BluetoothDevice {
+  const factory BluetoothDevice({
+    String? name,
+    String? address,
+    required bool status,
+    required List<String> serviceUuid,
+  }) = _BluetoothDevice;
 }
 
 class RustImpl implements Rust {
@@ -44,39 +64,6 @@ class RustImpl implements Rust {
   factory RustImpl.wasm(FutureOr<WasmModule> module) =>
       RustImpl(module as ExternalLibrary);
   RustImpl.raw(this._platform);
-  Future<List<BluetoothDevice>> getAdapter({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_get_adapter(port_),
-      parseSuccessData: _wire2api_list_bluetooth_device,
-      constMeta: kGetAdapterConstMeta,
-      argValues: [],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kGetAdapterConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_adapter",
-        argNames: [],
-      );
-
-  Future<void> connect({required Uint8List data, dynamic hint}) {
-    var arg0 = _platform.api2wire_uint_8_list(data);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_connect(port_, arg0),
-      parseSuccessData: _wire2api_unit,
-      constMeta: kConnectConstMeta,
-      argValues: [data],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kConnectConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "connect",
-        argNames: ["data"],
-      );
-
   Future<void> init({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_init_(port_),
@@ -93,6 +80,91 @@ class RustImpl implements Rust {
         argNames: [],
       );
 
+  Future<bool> getAdapterState({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_adapter_state(port_),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kGetAdapterStateConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetAdapterStateConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_adapter_state",
+        argNames: [],
+      );
+
+  Future<List<BluetoothDevice>> discoverDevice({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_discover_device(port_),
+      parseSuccessData: _wire2api_list_bluetooth_device,
+      constMeta: kDiscoverDeviceConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kDiscoverDeviceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "discover_device",
+        argNames: [],
+      );
+
+  Future<bool> connectToDevice({required String serviceUuid, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(serviceUuid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_connect_to_device(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kConnectToDeviceConstMeta,
+      argValues: [serviceUuid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kConnectToDeviceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "connect_to_device",
+        argNames: ["serviceUuid"],
+      );
+
+  Future<bool> disconnect({required String serviceUuid, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(serviceUuid);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_disconnect(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kDisconnectConstMeta,
+      argValues: [serviceUuid],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kDisconnectConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "disconnect",
+        argNames: ["serviceUuid"],
+      );
+
+  Future<void> startPrinter(
+      {required String serviceUuid, required Uint8List data, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(serviceUuid);
+    var arg1 = _platform.api2wire_uint_8_list(data);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_start_printer(port_, arg0, arg1),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kStartPrinterConstMeta,
+      argValues: [serviceUuid, data],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kStartPrinterConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "start_printer",
+        argNames: ["serviceUuid", "data"],
+      );
+
   void dispose() {
     _platform.dispose();
   }
@@ -102,14 +174,19 @@ class RustImpl implements Rust {
     return raw as String;
   }
 
+  List<String> _wire2api_StringList(dynamic raw) {
+    return (raw as List<dynamic>).cast<String>();
+  }
+
   BluetoothDevice _wire2api_bluetooth_device(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
     return BluetoothDevice(
       name: _wire2api_opt_String(arr[0]),
       address: _wire2api_opt_String(arr[1]),
       status: _wire2api_bool(arr[2]),
+      serviceUuid: _wire2api_StringList(arr[3]),
     );
   }
 
@@ -151,6 +228,11 @@ class RustPlatform extends FlutterRustBridgeBase<RustWire> {
   RustPlatform(ffi.DynamicLibrary dylib) : super(RustWire(dylib));
 
 // Section: api2wire
+
+  @protected
+  ffi.Pointer<wire_uint_8_list> api2wire_String(String raw) {
+    return api2wire_uint_8_list(utf8.encoder.convert(raw));
+  }
 
   @protected
   ffi.Pointer<wire_uint_8_list> api2wire_uint_8_list(Uint8List raw) {
@@ -258,37 +340,6 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _init_frb_dart_api_dl = _init_frb_dart_api_dlPtr
       .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
 
-  void wire_get_adapter(
-    int port_,
-  ) {
-    return _wire_get_adapter(
-      port_,
-    );
-  }
-
-  late final _wire_get_adapterPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_adapter');
-  late final _wire_get_adapter =
-      _wire_get_adapterPtr.asFunction<void Function(int)>();
-
-  void wire_connect(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> data,
-  ) {
-    return _wire_connect(
-      port_,
-      data,
-    );
-  }
-
-  late final _wire_connectPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_connect');
-  late final _wire_connect = _wire_connectPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
   void wire_init_(
     int port_,
   ) {
@@ -300,6 +351,88 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_init_Ptr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_init_');
   late final _wire_init_ = _wire_init_Ptr.asFunction<void Function(int)>();
+
+  void wire_get_adapter_state(
+    int port_,
+  ) {
+    return _wire_get_adapter_state(
+      port_,
+    );
+  }
+
+  late final _wire_get_adapter_statePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_adapter_state');
+  late final _wire_get_adapter_state =
+      _wire_get_adapter_statePtr.asFunction<void Function(int)>();
+
+  void wire_discover_device(
+    int port_,
+  ) {
+    return _wire_discover_device(
+      port_,
+    );
+  }
+
+  late final _wire_discover_devicePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_discover_device');
+  late final _wire_discover_device =
+      _wire_discover_devicePtr.asFunction<void Function(int)>();
+
+  void wire_connect_to_device(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> service_uuid,
+  ) {
+    return _wire_connect_to_device(
+      port_,
+      service_uuid,
+    );
+  }
+
+  late final _wire_connect_to_devicePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_connect_to_device');
+  late final _wire_connect_to_device = _wire_connect_to_devicePtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_disconnect(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> service_uuid,
+  ) {
+    return _wire_disconnect(
+      port_,
+      service_uuid,
+    );
+  }
+
+  late final _wire_disconnectPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_disconnect');
+  late final _wire_disconnect = _wire_disconnectPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_start_printer(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> service_uuid,
+    ffi.Pointer<wire_uint_8_list> data,
+  ) {
+    return _wire_start_printer(
+      port_,
+      service_uuid,
+      data,
+    );
+  }
+
+  late final _wire_start_printerPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_start_printer');
+  late final _wire_start_printer = _wire_start_printerPtr.asFunction<
+      void Function(
+          int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,

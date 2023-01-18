@@ -2,18 +2,37 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_get_adapter(port_: i64) {
-    wire_get_adapter_impl(port_)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_connect(port_: i64, data: *mut wire_uint_8_list) {
-    wire_connect_impl(port_, data)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_init_(port_: i64) {
     wire_init__impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_adapter_state(port_: i64) {
+    wire_get_adapter_state_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_discover_device(port_: i64) {
+    wire_discover_device_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_connect_to_device(port_: i64, service_uuid: *mut wire_uint_8_list) {
+    wire_connect_to_device_impl(port_, service_uuid)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_disconnect(port_: i64, service_uuid: *mut wire_uint_8_list) {
+    wire_disconnect_impl(port_, service_uuid)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_start_printer(
+    port_: i64,
+    service_uuid: *mut wire_uint_8_list,
+    data: *mut wire_uint_8_list,
+) {
+    wire_start_printer_impl(port_, service_uuid, data)
 }
 
 // Section: allocate functions
@@ -30,6 +49,13 @@ pub extern "C" fn new_uint_8_list_0(len: i32) -> *mut wire_uint_8_list {
 // Section: related functions
 
 // Section: impl Wire2Api
+
+impl Wire2Api<String> for *mut wire_uint_8_list {
+    fn wire2api(self) -> String {
+        let vec: Vec<u8> = self.wire2api();
+        String::from_utf8_lossy(&vec).into_owned()
+    }
+}
 
 impl Wire2Api<Vec<u8>> for *mut wire_uint_8_list {
     fn wire2api(self) -> Vec<u8> {

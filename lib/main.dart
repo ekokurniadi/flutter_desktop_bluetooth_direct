@@ -1,11 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:coba_lagi/app.dart';
 import 'package:coba_lagi/bridge_generated.dart';
+import 'package:coba_lagi/perangkat_tersimpan.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart' hide Size;
-import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'ffi.io.dart' show api;
 
-
-void main() {
+Future<void> main() async {
+  await App.init();
   runApp(const MyApp());
 }
 
@@ -53,9 +57,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool bluetoothAdapterState = false;
+  List<BluetoothDevice> devices = [];
+  bool isLoading = false;
+
   @override
   void initState() {
     api.init();
+
+    if (!mounted) {
+      return;
+    }
     super.initState();
   }
 
@@ -66,75 +78,89 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<List<int>> testTicket() async {
-  final profile = await CapabilityProfile.load();
-  final generator = Generator(PaperSize.mm80, profile);
-  List<int> bytes = [];
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+    List<int> bytes = [];
 
-  bytes += generator.text(
-      'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
-  bytes += generator.text('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ',
-      styles: PosStyles(codeTable: 'CP1252'));
-  bytes += generator.text('Special 2: blåbærgrød',
-      styles: PosStyles(codeTable: 'CP1252'));
+    bytes += generator.text(
+        'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
+    bytes += generator.text('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ',
+        styles: const PosStyles(codeTable: 'CP1252'));
+    bytes += generator.text('Special 2: blåbærgrød',
+        styles: const PosStyles(codeTable: 'CP1252'));
 
-  bytes += generator.text('Bold text', styles: PosStyles(bold: true));
-  bytes += generator.text('Reverse text', styles: PosStyles(reverse: true));
-  bytes += generator.text('Underlined text',
-      styles: PosStyles(underline: true), linesAfter: 1);
-  bytes +=
-      generator.text('Align left', styles: PosStyles(align: PosAlign.left));
-  bytes +=
-      generator.text('Align center', styles: PosStyles(align: PosAlign.center));
-  bytes += generator.text('Align right',
-      styles: PosStyles(align: PosAlign.right), linesAfter: 1);
+    bytes += generator.text('Bold text', styles: const PosStyles(bold: true));
+    bytes +=
+        generator.text('Reverse text', styles: const PosStyles(reverse: true));
+    bytes += generator.text('Underlined text',
+        styles: const PosStyles(underline: true), linesAfter: 1);
+    bytes += generator.text('Align left',
+        styles: const PosStyles(align: PosAlign.left));
+    bytes += generator.text('Align center',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('Align right',
+        styles: const PosStyles(align: PosAlign.right), linesAfter: 1);
 
-  bytes += generator.row([
-    PosColumn(
-      text: 'col3',
-      width: 3,
-      styles: PosStyles(align: PosAlign.center, underline: true),
-    ),
-    PosColumn(
-      text: 'col6',
-      width: 6,
-      styles: PosStyles(align: PosAlign.center, underline: true),
-    ),
-    PosColumn(
-      text: 'col3',
-      width: 3,
-      styles: PosStyles(align: PosAlign.center, underline: true),
-    ),
-  ]);
+    bytes += generator.row([
+      PosColumn(
+        text: 'col3',
+        width: 3,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+      PosColumn(
+        text: 'col6',
+        width: 6,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+      PosColumn(
+        text: 'col3',
+        width: 3,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+    ]);
 
-  bytes += generator.text('Text size 200%',
-      styles: PosStyles(
-        height: PosTextSize.size2,
-        width: PosTextSize.size2,
-      ));
+    bytes += generator.text('Text size 200%',
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          width: PosTextSize.size2,
+        ));
 
-  // Print barcode
-  final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
-  bytes += generator.barcode(Barcode.upcA(barData));
+    // Print barcode
+    final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
+    bytes += generator.barcode(Barcode.upcA(barData));
 
-  // Print mixed (chinese + latin) text. Only for printers supporting Kanji mode
-  // ticket.text(
-  //   'hello ! 中文字 # world @ éphémère &',
-  //   styles: PosStyles(codeTable: PosCodeTable.westEur),
-  //   containsChinese: true,
-  // );
+    bytes += generator.feed(2);
+    bytes += generator.cut();
+    return bytes;
+  }
 
-  bytes += generator.feed(2);
-  bytes += generator.cut();
-  return bytes;
-}
+  Future<void> saveIntoPreference(BluetoothDevice data) async {
+    Map<String, dynamic> savedData = {
+      'name': data.name,
+      'address': data.address,
+      'status': data.status,
+      'service_uuid': data.serviceUuid,
+    };
+    await App.sharedPreferences.setString('device', jsonEncode(savedData));
+    final result = App.sharedPreferences.getString('device');
+    print(result);
+  }
 
-  List<BluetoothDevice> devices = [];
-  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return const PerangkatTersimpan();
+              }));
+            },
+            child: const Text("Lihat Perangkat Tersimpan"),
+          )
+        ],
       ),
       body: isLoading
           ? const Center(
@@ -147,13 +173,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 itemBuilder: (context, index) {
                   return InkWell(
                     onTap: () async {
-                      final cetakan = await testTicket();
-                      await api.connect(
-                        data: Uint8List.fromList(cetakan)
+                      await api.connectToDevice(
+                        serviceUuid: devices[index].serviceUuid.first,
                       );
                     },
                     child: Card(
                       child: Container(
+                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -161,8 +187,31 @@ class _MyHomePageState extends State<MyHomePage> {
                             Text(
                                 'Device Name : ${devices[index].name ?? 'Unknown'}'),
                             Text(
-                                'Address : ${devices[index].address ?? 'Unknown Address'} '),
-                            Text('Status : ${devices[index].status}'),
+                                'Address : ${devices[index].address!.split('-')[1]} '),
+                            Text('Connectable : ${devices[index].status}'),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    final ticket = await testTicket();
+                                    await api.startPrinter(
+                                      serviceUuid:
+                                          devices[index].serviceUuid.first,
+                                      data: Uint8List.fromList(ticket),
+                                    );
+                                  },
+                                  child: const Text("Print"),
+                                ),
+                                const SizedBox(width: 5),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await saveIntoPreference(devices[index]);
+                                  },
+                                  child: const Text("Save To Pref"),
+                                ),
+                              ],
+                            )
                           ],
                         ),
                       ),
@@ -176,21 +225,28 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             isLoading = true;
           });
-          final data = await api.getAdapter();
+          final isBluetoothAdapterExist = await api.getAdapterState();
 
-          if (devices.isNotEmpty) {
-            devices.clear();
+          if (isBluetoothAdapterExist) {
+            final data = await api.discoverDevice();
+            if (devices.isNotEmpty) {
+              devices.clear();
+            }
+            setState(() {
+              isLoading = false;
+              devices.addAll(data);
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: const Text("Perangkat Bluetooth belum di aktifkan")));
+            setState(() {
+              isLoading = false;
+            });
           }
-          setState(() {
-            isLoading = false;
-            devices.addAll(data);
-          });
         },
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        tooltip: 'Discover',
+        child: const Icon(Icons.search),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
-
-  
 }

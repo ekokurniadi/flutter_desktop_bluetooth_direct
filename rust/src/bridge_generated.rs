@@ -21,29 +21,6 @@ use std::sync::Arc;
 
 // Section: wire functions
 
-fn wire_get_adapter_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "get_adapter",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || move |task_callback| Ok(get_adapter()),
-    )
-}
-fn wire_connect_impl(port_: MessagePort, data: impl Wire2Api<Vec<u8>> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "connect",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_data = data.wire2api();
-            move |task_callback| Ok(connect(api_data))
-        },
-    )
-}
 fn wire_init__impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -52,6 +29,73 @@ fn wire_init__impl(port_: MessagePort) {
             mode: FfiCallMode::Normal,
         },
         move || move |task_callback| Ok(init_()),
+    )
+}
+fn wire_get_adapter_state_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_adapter_state",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| Ok(get_adapter_state()),
+    )
+}
+fn wire_discover_device_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "discover_device",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| Ok(discover_device()),
+    )
+}
+fn wire_connect_to_device_impl(
+    port_: MessagePort,
+    service_uuid: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "connect_to_device",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_service_uuid = service_uuid.wire2api();
+            move |task_callback| Ok(connect_to_device(api_service_uuid))
+        },
+    )
+}
+fn wire_disconnect_impl(port_: MessagePort, service_uuid: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "disconnect",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_service_uuid = service_uuid.wire2api();
+            move |task_callback| Ok(disconnect(api_service_uuid))
+        },
+    )
+}
+fn wire_start_printer_impl(
+    port_: MessagePort,
+    service_uuid: impl Wire2Api<String> + UnwindSafe,
+    data: impl Wire2Api<Vec<u8>> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "start_printer",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_service_uuid = service_uuid.wire2api();
+            let api_data = data.wire2api();
+            move |task_callback| Ok(start_printer(api_service_uuid, api_data))
+        },
     )
 }
 // Section: wrapper structs
@@ -76,6 +120,7 @@ where
         (!self.is_null()).then(|| self.wire2api())
     }
 }
+
 impl Wire2Api<u8> for u8 {
     fn wire2api(self) -> u8 {
         self
@@ -90,6 +135,7 @@ impl support::IntoDart for BluetoothDevice {
             self.name.into_dart(),
             self.address.into_dart(),
             self.status.into_dart(),
+            self.service_uuid.into_dart(),
         ]
         .into_dart()
     }

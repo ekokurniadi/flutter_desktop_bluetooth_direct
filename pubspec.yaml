@@ -36,6 +36,8 @@ dependencies:
     sdk: flutter
   flutter_rust_bridge: ^1.59.0
   freezed_annotation: ^2.2.0
+  msix: ^3.7.0
+  shared_preferences: ^2.0.16
 
 dev_dependencies:
   build_runner: ^2.3.3
@@ -86,3 +88,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+msix_config:
+  display_name: Direct Print Windows
+  publisher_display_name: Company Name
+  identity_name: company.suite.flutterapp
+  msix_version: 1.0.0.0
+  capabilities: internetClient, location, microphone, webcam
+  build_windows: false
