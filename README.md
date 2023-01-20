@@ -28,3 +28,6 @@ https://github.com/ekokurniadi/flutter_desktop_bluetooth_direct/raw/master/insta
 2. Pastikan versi flutter sdk min 2.17.0
 3. Install flutter_rust_bridge
 4. Untuk melakukan binding code rust ke flutter anda bisa melihat pada dokumentasi resmi flutter_rust_bridge
+
+## Integrasi Rust dan Flutter
+Dokumentasi Resmi Flutter Rust Bridge : https://cjycode.com/flutter_rust_bridge/integrate/deps.html
