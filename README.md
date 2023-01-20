@@ -23,3 +23,8 @@ Step Instalasi Certificate :
 15. Close semua dialog sebelumnya
 16. Coba double klik kembali pada coba_lagi.msix
 
+## Menjalankan project
+1. Install rust
+2. Pastikan versi flutter sdk min 2.17.0
+3. Install flutter_rust_bridge
+4. Untuk melakukan binding code rust ke flutter anda bisa melihat ada dokumentasi resmi flutter_rust_bridge
