@@ -1,5 +1,9 @@
 # coba_lagi
 
+Step Download Aplikasi:
+1. Buka Folder Installer 
+
+
 Step Instalasi Certificate : 
 1. Klik kanan pada aplikasi coba_lagi.msix
 2. Pilih Properties
