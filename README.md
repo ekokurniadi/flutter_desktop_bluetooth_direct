@@ -1,7 +1,8 @@
 # coba_lagi
 
 Step Download Aplikasi:
-1. Buka Folder Installer 
+1. Kunjungi link berikut :  
+https://github.com/ekokurniadi/flutter_desktop_bluetooth_direct/raw/master/installer/coba_lagi.msix
 
 
 Step Instalasi Certificate : 
