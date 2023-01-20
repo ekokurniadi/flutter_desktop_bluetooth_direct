@@ -1,11 +1,11 @@
-# coba_lagi
+## Direct print bluetooth thermal printer Flutter Desktop Windows
 
-Step Download Aplikasi:
+## Step Download Aplikasi:
 1. Kunjungi link berikut :  
 https://github.com/ekokurniadi/flutter_desktop_bluetooth_direct/raw/master/installer/coba_lagi.msix
 
 
-Step Instalasi Certificate : 
+## Step Instalasi Certificate : 
 1. Klik kanan pada aplikasi coba_lagi.msix
 2. Pilih Properties
 3. Klik pada tab Digital Signature
@@ -27,4 +27,4 @@ Step Instalasi Certificate :
 1. Install rust
 2. Pastikan versi flutter sdk min 2.17.0
 3. Install flutter_rust_bridge
-4. Untuk melakukan binding code rust ke flutter anda bisa melihat ada dokumentasi resmi flutter_rust_bridge
+4. Untuk melakukan binding code rust ke flutter anda bisa melihat pada dokumentasi resmi flutter_rust_bridge
