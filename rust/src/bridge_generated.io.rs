@@ -35,6 +35,16 @@ pub extern "C" fn wire_start_printer(
     wire_start_printer_impl(port_, service_uuid, data)
 }
 
+#[no_mangle]
+pub extern "C" fn wire_discover_device_stream(port_: i64) {
+    wire_discover_device_stream_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_stop_scan(port_: i64) {
+    wire_stop_scan_impl(port_)
+}
+
 // Section: allocate functions
 
 #[no_mangle]

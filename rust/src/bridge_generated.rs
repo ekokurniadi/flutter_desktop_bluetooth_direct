@@ -98,6 +98,26 @@ fn wire_start_printer_impl(
         },
     )
 }
+fn wire_discover_device_stream_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "discover_device_stream",
+            port: Some(port_),
+            mode: FfiCallMode::Stream,
+        },
+        move || move |task_callback| Ok(discover_device_stream(task_callback.stream_sink())),
+    )
+}
+fn wire_stop_scan_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "stop_scan",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| stop_scan(),
+    )
+}
 // Section: wrapper structs
 
 // Section: static checks

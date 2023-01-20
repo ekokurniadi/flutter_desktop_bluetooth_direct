@@ -1,16 +1,20 @@
 # coba_lagi
 
-A new Flutter project.
+Step Instalasi Certificate : 
+1. Klik kanan pada aplikasi coba_lagi.msix
+2. Pilih Properties
+3. Klik pada tab Digital Signature
+4. klik pada list Certificate (Msix Testing)
+5. Klik Details
+6. Klik View Certificate
+7. Klik Install Certificate
+8. Pilih Local Machine
+9. Pilih Place all certificates in the following store
+10. Klik Browse
+11. Pilih Trusted Root Certificate Authorities
+12. Klik Ok
+13. Klik Next
+14. Klik Finish
+15. Close semua dialog sebelumnya
+16. Coba double klik kembali pada coba_lagi.msix
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

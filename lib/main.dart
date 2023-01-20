@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -60,21 +61,47 @@ class _MyHomePageState extends State<MyHomePage> {
   bool bluetoothAdapterState = false;
   List<BluetoothDevice> devices = [];
   bool isLoading = false;
-
+  late StreamSubscription<BluetoothDevice> stream;
   @override
   void initState() {
     api.init();
-
     if (!mounted) {
       return;
     }
+
     super.initState();
   }
 
   @override
   void dispose() {
     api.dispose();
+    stream.cancel();
     super.dispose();
+  }
+
+  Future<void> discoverServiceStream() async {
+    try {
+      setState(() {
+        devices.clear();
+      });
+      stream = api.discoverDeviceStream().listen((event) {
+        if (!devices.any((element) => element.address == event.address)) {
+          setState(() {
+            devices.add(BluetoothDevice(
+              status: event.status,
+              serviceUuid: event.serviceUuid,
+              name: event.name,
+              address: event.address,
+            ));
+          });
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+        e.toString(),
+      )));
+    }
   }
 
   Future<List<int>> testTicket() async {
@@ -173,9 +200,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 itemBuilder: (context, index) {
                   return InkWell(
                     onTap: () async {
-                      await api.connectToDevice(
+                      final result = await api.connectToDevice(
                         serviceUuid: devices[index].serviceUuid.first,
                       );
+
+                      if (result) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                "Connected to device ${devices[index].name ?? 'unknown'}")));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text("Error can't connect to device,")));
+                      }
                     },
                     child: Card(
                       child: Container(
@@ -186,20 +222,27 @@ class _MyHomePageState extends State<MyHomePage> {
                           children: [
                             Text(
                                 'Device Name : ${devices[index].name ?? 'Unknown'}'),
-                            Text(
-                                'Address : ${devices[index].address!.split('-')[1]} '),
+                            Text('Address : ${devices[index].address ?? '-'} '),
                             Text('Connectable : ${devices[index].status}'),
                             const SizedBox(height: 5),
                             Row(
                               children: [
                                 ElevatedButton(
                                   onPressed: () async {
-                                    final ticket = await testTicket();
-                                    await api.startPrinter(
-                                      serviceUuid:
-                                          devices[index].serviceUuid.first,
-                                      data: Uint8List.fromList(ticket),
-                                    );
+                                    try {
+                                      final ticket = await testTicket();
+                                      await api.startPrinter(
+                                        serviceUuid:
+                                            devices[index].serviceUuid.first,
+                                        data: Uint8List.fromList(ticket),
+                                      );
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text(
+                                        e.toString(),
+                                      )));
+                                    }
                                   },
                                   child: const Text("Print"),
                                 ),
@@ -209,6 +252,29 @@ class _MyHomePageState extends State<MyHomePage> {
                                     await saveIntoPreference(devices[index]);
                                   },
                                   child: const Text("Save To Pref"),
+                                ),
+                                const SizedBox(width: 5),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    try {
+                                      await api.connectToDevice(
+                                        serviceUuid:
+                                            devices[index].serviceUuid.first,
+                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text(
+                                        "Terhubung ke perangkat ${devices[index].name ?? 'unknown'}",
+                                      )));
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text(
+                                        e.toString(),
+                                      )));
+                                    }
+                                  },
+                                  child: const Text("Test Connection"),
                                 ),
                               ],
                             )
@@ -222,27 +288,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          setState(() {
-            isLoading = true;
-          });
-          final isBluetoothAdapterExist = await api.getAdapterState();
-
-          if (isBluetoothAdapterExist) {
-            final data = await api.discoverDevice();
-            if (devices.isNotEmpty) {
-              devices.clear();
-            }
-            setState(() {
-              isLoading = false;
-              devices.addAll(data);
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: const Text("Perangkat Bluetooth belum di aktifkan")));
-            setState(() {
-              isLoading = false;
-            });
-          }
+          await discoverServiceStream();
         },
         tooltip: 'Discover',
         child: const Icon(Icons.search),

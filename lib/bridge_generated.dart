@@ -39,10 +39,18 @@ abstract class Rust {
 
   FlutterRustBridgeTaskConstMeta get kDisconnectConstMeta;
 
-  Future<void> startPrinter(
+  Future<bool> startPrinter(
       {required String serviceUuid, required Uint8List data, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kStartPrinterConstMeta;
+
+  Stream<BluetoothDevice> discoverDeviceStream({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kDiscoverDeviceStreamConstMeta;
+
+  Future<void> stopScan({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kStopScanConstMeta;
 }
 
 @freezed
@@ -146,13 +154,13 @@ class RustImpl implements Rust {
         argNames: ["serviceUuid"],
       );
 
-  Future<void> startPrinter(
+  Future<bool> startPrinter(
       {required String serviceUuid, required Uint8List data, dynamic hint}) {
     var arg0 = _platform.api2wire_String(serviceUuid);
     var arg1 = _platform.api2wire_uint_8_list(data);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_start_printer(port_, arg0, arg1),
-      parseSuccessData: _wire2api_unit,
+      parseSuccessData: _wire2api_bool,
       constMeta: kStartPrinterConstMeta,
       argValues: [serviceUuid, data],
       hint: hint,
@@ -163,6 +171,38 @@ class RustImpl implements Rust {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "start_printer",
         argNames: ["serviceUuid", "data"],
+      );
+
+  Stream<BluetoothDevice> discoverDeviceStream({dynamic hint}) {
+    return _platform.executeStream(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_discover_device_stream(port_),
+      parseSuccessData: _wire2api_bluetooth_device,
+      constMeta: kDiscoverDeviceStreamConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kDiscoverDeviceStreamConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "discover_device_stream",
+        argNames: [],
+      );
+
+  Future<void> stopScan({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_stop_scan(port_),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kStopScanConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kStopScanConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "stop_scan",
+        argNames: [],
       );
 
   void dispose() {
@@ -433,6 +473,34 @@ class RustWire implements FlutterRustBridgeWireBase {
   late final _wire_start_printer = _wire_start_printerPtr.asFunction<
       void Function(
           int, ffi.Pointer<wire_uint_8_list>, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_discover_device_stream(
+    int port_,
+  ) {
+    return _wire_discover_device_stream(
+      port_,
+    );
+  }
+
+  late final _wire_discover_device_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_discover_device_stream');
+  late final _wire_discover_device_stream =
+      _wire_discover_device_streamPtr.asFunction<void Function(int)>();
+
+  void wire_stop_scan(
+    int port_,
+  ) {
+    return _wire_stop_scan(
+      port_,
+    );
+  }
+
+  late final _wire_stop_scanPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_stop_scan');
+  late final _wire_stop_scan =
+      _wire_stop_scanPtr.asFunction<void Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,

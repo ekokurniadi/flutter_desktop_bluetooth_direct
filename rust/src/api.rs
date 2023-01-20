@@ -1,9 +1,12 @@
 use bluest::Adapter;
 
-use flutter_rust_bridge::frb;
+use anyhow::Result;
+use flutter_rust_bridge::{frb, StreamSink};
 use futures_util::StreamExt;
 use std::error::Error;
 use std::str::FromStr;
+use std::time::Duration;
+use tokio::sync::OnceCell;
 use tracing::metadata::LevelFilter;
 use tracing::{info, warn};
 use tracing_subscriber::prelude::*;
@@ -11,6 +14,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 use uuid::Uuid;
 
 #[frb(dart_metadata=("freezed", "immutable" import "package:meta/meta.dart" as meta))]
+#[derive(Debug, Clone)]
 pub struct BluetoothDevice {
     pub name: Option<String>,
     pub address: Option<String>,
@@ -141,16 +145,18 @@ pub async fn disconnect(service_uuid: String) -> Result<bool, Box<dyn Error>> {
 }
 
 #[tokio::main]
-pub async fn start_printer(service_uuid: String, data: Vec<u8>) -> Result<(), Box<dyn Error>> {
+pub async fn start_printer(service_uuid: String, data: Vec<u8>) -> Result<bool, Box<dyn Error>> {
     let adapter = Adapter::default()
         .await
         .ok_or("Bluetooth adapter not found")?;
     adapter.wait_available().await?;
 
+    let mut result = false;
+
     let uuid: Uuid = Uuid::from_str(&service_uuid).unwrap();
 
     info!("looking for device");
-    
+
     let device = adapter
         .discover_devices(&[uuid])
         .await?
@@ -184,7 +190,54 @@ pub async fn start_printer(service_uuid: String, data: Vec<u8>) -> Result<(), Bo
         } else {
             warn!("failed to send data, skipping on {:?}", c.uuid());
         }
+        result = res;
     }
 
+    Ok(result)
+}
+
+static COBA_STREAM: OnceCell<StreamSink<BluetoothDevice>> = OnceCell::const_new();
+
+#[tokio::main]
+pub async fn discover_device_stream(
+    s: StreamSink<BluetoothDevice>,
+) -> anyhow::Result<(), Box<dyn Error>> {
+    let _coba = COBA_STREAM.set(s.to_owned());
+
+    let adapter = Adapter::default()
+        .await
+        .ok_or("Bluetooth adapter not found")?;
+    adapter.wait_available().await?;
+
+    let mut scan = adapter.scan(&[]).await?;
+    let mut counter = 0;
+
+    while let Some(value) = scan.next().await {
+        counter += 1;
+        let mut service_uuids: Vec<String> = Vec::new();
+        if !value.adv_data.services.is_empty() && value.adv_data.is_connectable != false {
+            for sid in value.adv_data.services.iter() {
+                service_uuids.push(sid.to_string());
+            }
+            let bluetooth_device = BluetoothDevice {
+                name: Some(value.device.name().unwrap_or(String::from("Unknown"))),
+                address: Some(value.device.id().to_string()),
+                service_uuid: service_uuids,
+                status: value.adv_data.is_connectable,
+            };
+            info!("{:?}", bluetooth_device);
+            s.add(bluetooth_device);
+            if counter > 100{
+                s.close();
+                break;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn stop_scan() -> Result<()> {
+    let _rt = COBA_STREAM.get().expect("Error");
+    _rt.close();
     Ok(())
 }
