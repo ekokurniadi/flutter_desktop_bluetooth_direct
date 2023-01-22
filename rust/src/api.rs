@@ -5,7 +5,6 @@ use flutter_rust_bridge::{frb, StreamSink};
 use futures_util::StreamExt;
 use std::error::Error;
 use std::str::FromStr;
-use std::time::Duration;
 use tokio::sync::OnceCell;
 use tracing::metadata::LevelFilter;
 use tracing::{info, warn};
@@ -20,6 +19,22 @@ pub struct BluetoothDevice {
     pub address: Option<String>,
     pub status: bool,
     pub service_uuid: Vec<String>,
+}
+
+impl BluetoothDevice {
+    fn new(
+        name: Option<String>,
+        address: Option<String>,
+        status: bool,
+        service_uuid: Vec<String>,
+    ) -> Self {
+        BluetoothDevice {
+            name,
+            address,
+            status,
+            service_uuid,
+        }
+    }
 }
 
 /// INIT LOGGER
@@ -70,17 +85,17 @@ pub async fn discover_device() -> Result<Vec<BluetoothDevice>, Box<dyn Error>> {
             service_uuids.push(sid.to_string());
         }
 
-        let blue_device = BluetoothDevice {
-            name: Some(
+        let blue_device = BluetoothDevice::new(
+            Some(
                 discovered_device
                     .device
                     .name()
                     .unwrap_or(String::from("Unknown")),
             ),
-            address: Some(discovered_device.device.id().to_string()),
-            service_uuid: service_uuids,
-            status: discovered_device.adv_data.is_connectable,
-        };
+            Some(discovered_device.device.id().to_string()),
+            discovered_device.adv_data.is_connectable,
+            service_uuids,
+        );
 
         list_of_device.push(blue_device);
     }
@@ -219,15 +234,17 @@ pub async fn discover_device_stream(
             for sid in value.adv_data.services.iter() {
                 service_uuids.push(sid.to_string());
             }
-            let bluetooth_device = BluetoothDevice {
-                name: Some(value.device.name().unwrap_or(String::from("Unknown"))),
-                address: Some(value.device.id().to_string()),
-                service_uuid: service_uuids,
-                status: value.adv_data.is_connectable,
-            };
+
+            let bluetooth_device = BluetoothDevice::new(
+                Some(value.device.name().unwrap_or(String::from("Unknown"))),
+                Some(value.device.id().to_string()),
+                value.adv_data.is_connectable,
+                service_uuids,
+            );
+            
             info!("{:?}", bluetooth_device);
             s.add(bluetooth_device);
-            if counter > 100{
+            if counter > 100 {
                 s.close();
                 break;
             }
